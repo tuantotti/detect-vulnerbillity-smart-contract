@@ -22,7 +22,7 @@ class TfIdf:
 class Word2Vec:
     def __init__(self, word_index):
         self.word_index = word_index
-        if os.path.isdir('./word2vec'):
+        if os.path.isdir('./word2vec') == False:
             os.mkdir('./word2vec')
 
     def __call__(self, *args, **kwargs):

@@ -214,7 +214,7 @@ def train(epochs, model, optimizer, criterion, dataloader):
   train_accuracies = []
   valid_accuracies = []
 
-  if os.path.isdir('./trained'):
+  if os.path.isdir('./trained') == False:
     os.mkdir('./trained')
 
   for epoch in range(epochs):

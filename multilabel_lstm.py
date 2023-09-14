@@ -10,11 +10,7 @@ from sklearn.metrics import f1_score, accuracy_score
 from utils.feature_extraction_utils import TfIdf, BagOfWord, Word2Vec
 from sklearn.model_selection import train_test_split
 from utils.save_report import save_classification
-
-
-from sklearn.preprocessing import MinMaxScaler
-from keras.preprocessing.text import Tokenizer
-from keras.utils import pad_sequences
+from utils.process_text import Tokenizer, pad_sequences
 
 import matplotlib.pyplot as plt
 
@@ -158,7 +154,7 @@ def train(epochs, model, optimizer, criterion, dataloader):
   train_accuracies = []
   valid_accuracies = []
 
-  if os.path.isdir('./trained'):
+  if os.path.isdir('./trained') == False:
      os.mkdir('./trained')
 
   for epoch in range(epochs):
@@ -240,7 +236,7 @@ def run(feature_extraction_method='tfidf'):
   """
   print("Read and preprocess data")
   data_folder = os.getcwd() + '/data-multilabel/'
-  data = pd.read_csv(data_folder + '/Data_Cleansing.csv')
+  data = pd.read_csv(data_folder + 'Data_Cleansing.csv')
   data = data.drop(['Unnamed: 0', 'index', 'ADDRESS', 'LABEL_FORMAT'], axis=1)
   num_classes = 4
   selected_columns = ['BYTECODE', 'Timestamp dependence', 'Outdated Solidity version', 'Frozen Ether', 'Delegatecall Injection']
