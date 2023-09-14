@@ -144,7 +144,8 @@ def evaluate_steps(validating_loader, model, loss_f):
 """
 Training loop
 """
-def train(epochs, model, optimizer, criterion, dataloader):
+def train(epochs, model, optimizer, criterion, dataloader, **kwargs):
+  saved_model_name = kwargs['saved_model_name']
   data_train_loader, data_val_loader = dataloader
   # empty lists to store training and validation loss of each epoch
   # set initial loss to infinite
@@ -166,7 +167,7 @@ def train(epochs, model, optimizer, criterion, dataloader):
     # save the best model
     if valid_loss < best_valid_loss:
         best_valid_loss = valid_loss
-        torch.save(model.state_dict(), './trained/multilabel-lstm.pt')
+        torch.save(model.state_dict(), './trained/multilabel-'+saved_model_name+'-lstm.pt')
     # append training and validation loss
     train_losses.append(train_loss)
     valid_losses.append(valid_loss)
@@ -249,7 +250,7 @@ def run(feature_extraction_method='tfidf'):
   print(dict(zip(labels, values)))
 
   """## Split data"""
-  X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+  X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.2, random_state=2023)
 
   """
   Feature Extraction
@@ -282,22 +283,25 @@ def run(feature_extraction_method='tfidf'):
     word_index = tokenizer.word_index
     SIZE_OF_VOCAB = len(word_index) + 1
     word2vec = Word2Vec(word_index)
-    word2vec.train_vocab(X=X_train, embedding_dim=32)
+    # word2vec.train_vocab(X=X_train, embedding_dim=32)
     embedding_matrix = word2vec()
 
     X_train = pad_sequences(sequences_train, maxlen=max_length)
     X_test = pad_sequences(sequences_test, maxlen=max_length)
-
-  X_train, X_val, Y_train, Y_val = train_test_split(X_train, Y_train, test_size=0.2, random_state=2023)
 
   """
   Prepare data
   """
   X_train, X_val, Y_train, Y_val = train_test_split(X_train, Y_train, test_size=0.1, random_state=2023)
 
-  tensor_X_train = torch.tensor(X_train)
-  tensor_X_val = torch.tensor(X_val)
-  tensor_X_test = torch.tensor(X_test)
+  if feature_extraction_method == 'W2V':
+    tensor_X_train = torch.tensor(X_train)
+    tensor_X_val = torch.tensor(X_val)
+    tensor_X_test = torch.tensor(X_test)
+  else:
+    tensor_X_train = torch.Tensor(X_train)
+    tensor_X_val = torch.Tensor(X_val)
+    tensor_X_test = torch.Tensor(X_test) 
   tensor_Y_train = torch.FloatTensor(Y_train)
   tensor_Y_val = torch.FloatTensor(Y_val)
   tensor_Y_test = torch.FloatTensor(Y_test)
@@ -324,7 +328,7 @@ def run(feature_extraction_method='tfidf'):
   """
   Train model
   """
-  train_accuracies, valid_accuracies, train_losses, valid_losses = train(epochs, model, optimizer, criterion, (data_train_loader, data_val_loader))
+  train_accuracies, valid_accuracies, train_losses, valid_losses = train(epochs, model, optimizer, criterion, (data_train_loader, data_val_loader), saved_model_name=feature_extraction_method)
 
   """
   Plot the result of training process
