@@ -12,10 +12,10 @@ X, y = data['BYTECODE'], data.iloc[:, -4:]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=2023)
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state=2023)
 
-X_train.to_csv(data_folder + 'X_train.csv')
-X_test.to_csv(data_folder + 'X_test.csv')
-X_val.to_csv(data_folder + 'X_val.csv')
+X_train.to_csv(data_folder + 'X_train.csv', index=False)
+X_test.to_csv(data_folder + 'X_test.csv', index=False)
+X_val.to_csv(data_folder + 'X_val.csv', index=False)
 
-y_train.to_csv(data_folder + 'y_train.csv')
-y_test.to_csv(data_folder + 'y_test.csv')
-y_val.to_csv(data_folder + 'y_val.csv')
+y_train.to_csv(data_folder + 'y_train.csv', index=False)
+y_test.to_csv(data_folder + 'y_test.csv', index=False)
+y_val.to_csv(data_folder + 'y_val.csv', index=False)

@@ -4,6 +4,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.multioutput import ClassifierChain
 from sklearn.linear_model import LogisticRegression
 from skmultilearn.adapt import MLkNN
+from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 import time
 
@@ -51,8 +52,8 @@ class MultilabelModel:
 
             y_pred = Y_pred_chains.mean(axis=0)
 
-        elif self.method == 'MLkNN':
-            classifier = MLkNN(k=self.num_classes)
+        elif self.method == 'RandomForest':
+            classifier = RandomForestClassifier(random_state=2023)
             classifier.fit(self.X_train, self.y_train)
 
             # Predict and calculate execution time
@@ -60,7 +61,17 @@ class MultilabelModel:
             y_pred = classifier.predict(self.X_test)
             execution_time = (time.time() - start_time) / len(self.X_test)
             print('Execution time: ', execution_time)
+        
+        elif self.method == 'MLkNN':
+            classifier = MLkNN(k=self.num_classes)
+            classifier.fit(self.X_train, self.y_train)
 
+            # Predict and calculate execution time
+            start_time = time.time()
+            y_pred = classifier.predict(self.X_test)
+            y_pred = y_pred.toarray().astype(np.int64)
+            execution_time = (time.time() - start_time) / len(self.X_test)
+            print('Execution time: ', execution_time)
         else:
             print('No method chosen')
 

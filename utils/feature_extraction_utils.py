@@ -12,11 +12,11 @@ class TfIdf:
 
     def __call__(self, *args, **kwargs):
         # create vocabulary and calculate idf
-        X_train = self.vectorized.fit_transform(raw_documents=self.X_train).toarray()
+        X_train_tfidf = self.vectorized.fit_transform(raw_documents=self.X_train).toarray()
 
-        X_test = self.vectorized.transform(raw_documents=self.X_test).toarray()
+        X_test_tfidf = self.vectorized.transform(raw_documents=self.X_test).toarray()
 
-        return X_train, X_test
+        return X_train_tfidf, X_test_tfidf
 
 
 class Word2Vec:
@@ -44,7 +44,7 @@ class Word2Vec:
     def train_vocab(self, X, embedding_dim):
         sentences = [sentence.split() for sentence in X]
         model = FastText(vector_size=embedding_dim, window=6, min_count=1, sentences=sentences, epochs=20)
-        model.save('./word2vec/fasttext_model.model')
+        model.save(f'./word2vec/fasttext_model_{embedding_dim}.model')
 
 
 class BagOfWord:
@@ -60,3 +60,6 @@ class BagOfWord:
         X_test_bow = self.vectorizer.transform(self.X_test).toarray()
 
         return X_train_bow, X_test_bow
+
+    def transform(self, X):
+        return self.vectorizer.transform(X).toarray()

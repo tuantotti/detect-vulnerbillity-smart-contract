@@ -50,7 +50,7 @@ class Escort(nn.Module):
     gru_out, _ = self.gru(embeds)
     output_branches = [branch(gru_out[:, -1, :]) for branch in self.branches]
     output_branches = torch.cat(output_branches, dim=1)
-    outputs = self.sigmoid(output_branches)
+    # outputs = self.sigmoid(output_branches)
     return outputs
 
 """## Train model"""
