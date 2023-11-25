@@ -2,11 +2,11 @@ import pandas as pd
 import os
 import numpy as np
 
-from base_multilabel import MultilabelModel
-from utils.feature_extraction_utils import TfIdf
-from utils.save_report import save_classification
-from utils.process_text import Tokenizer, pad_sequences
-from utils.feature_extraction_utils import Word2Vec
+from dscv.models.ml_models import MultilabelModel
+from dscv.utils.feature_extraction_utils import TfIdf
+from dscv.utils.save_report import save_classification
+from dscv.utils.process_text import Tokenizer, pad_sequences
+from dscv.utils.feature_extraction_utils import Word2Vec
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.ensemble import RandomForestClassifier
 

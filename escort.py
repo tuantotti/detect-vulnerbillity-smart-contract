@@ -10,8 +10,9 @@ from torch.utils.data import TensorDataset, DataLoader
 
 from sklearn.metrics import *
 from sklearn.model_selection import train_test_split
-from utils.save_report import save_classification
-from utils.process_text import Tokenizer, pad_sequences
+from dscv.utils.save_report import save_classification
+from dscv.utils.process_text import Tokenizer, pad_sequences
+from dscv.models.models import Escort
 
 if torch.cuda.is_available():
  dev = "cuda:0"
@@ -19,39 +20,6 @@ else:
  dev = "cpu"
 device = torch.device(dev)
 print(device)
-"""## Create Model"""
-class Branch(nn.Module):
-  def __init__(self, INPUT_SIZE, hidden1_size, hidden2_size, dropout, num_outputs):
-    super(Branch, self).__init__()
-
-    self.dense1 = nn.Linear(INPUT_SIZE, hidden1_size)
-    self.dense2 = nn.Linear(hidden1_size, hidden2_size)
-    self.dense3 = nn.Linear(hidden2_size, num_outputs)
-    self.dropout = nn.Dropout(p=dropout)
-
-  def forward(self, x):
-    out_dense1 = self.dense1(x)
-    out_dropout = self.dropout(out_dense1)
-    out_dense2 = self.dense2(out_dropout)
-    out_dense3 = self.dense3(out_dense2)
-
-    return out_dense3
-
-class Escort(nn.Module):
-  def __init__(self, vocab_size, embedd_size, gru_hidden_size, n_layers, num_classes):
-    super(Escort, self).__init__()
-    self.word_embeddings = nn.Embedding(vocab_size, embedd_size)
-    self.gru = nn.GRU(embedd_size, gru_hidden_size, num_layers=n_layers)
-    self.branches = nn.ModuleList([Branch(gru_hidden_size, 128, 64, 0.2, 1) for _ in range(num_classes)])
-    self.sigmoid = nn.Sigmoid()
-
-  def forward(self, sequence):
-    embeds = self.word_embeddings(sequence)
-    gru_out, _ = self.gru(embeds)
-    output_branches = [branch(gru_out[:, -1, :]) for branch in self.branches]
-    output_branches = torch.cat(output_branches, dim=1)
-    # outputs = self.sigmoid(output_branches)
-    return outputs
 
 """## Train model"""
 """### Train and Validation Steps"""
@@ -249,7 +217,9 @@ def run():
 
     """## Run"""
     SIZE_OF_VOCAB = len(tokenizer.word_index.keys())
-    model = Escort(SIZE_OF_VOCAB, EMBEDDED_SIZE, GRU_HIDDEN_SIZE, NUM_LAYERS, NUM_OUTPUT_NODES)
+    model = Escort(vocab_size=SIZE_OF_VOCAB, embedd_size=EMBEDDED_SIZE, 
+                   rnn_hidden_size=GRU_HIDDEN_SIZE, n_layers=NUM_LAYERS, 
+                   num_classes=NUM_OUTPUT_NODES)
     model.to(device)
     print(model)
 

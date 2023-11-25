@@ -5,11 +5,15 @@ import numpy as np
 import zipfile
 import time
 import matplotlib.pyplot as plt
+from dscv.utils.util import get_misclassified_data, freeze_k_layer
+from dscv.models.models import BaseModel
+from dscv.datasets import OpcodeData
+from dscv.utils.save_report import save_classification
 
 import torch
 import torch.nn as nn
 from tqdm import tqdm
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from transformers import BertModel, BertTokenizerFast
 
 from sklearn.metrics import *
@@ -21,135 +25,6 @@ else:
  dev = "cpu"
 device = torch.device(dev)
 device
-
-def freeze_k_layer(secBert, k=1):
-  for param in secBert.encoder.layer[0:k].parameters():
-    param.requires_grad = False
-
-class Branch(nn.Module):
-  def __init__(self, input_size, hidden1_size, hidden2_size, dropout, num_outputs):
-    super(Branch, self).__init__()
-
-    self.dense1 = nn.Linear(input_size, hidden1_size)
-    self.dropout = nn.Dropout(p=dropout)
-    self.dense2 = nn.Linear(hidden1_size, hidden2_size)
-    self.dense3 = nn.Linear(hidden2_size, num_outputs)
-
-  def forward(self, x):
-    out_dense1 = self.dense1(x)
-    out_dropout = self.dropout(out_dense1)
-    out_dense2 = self.dense2(out_dropout)
-    out_dense3 = self.dense3(out_dense2)
-
-    return out_dense3
-
-class BaseModel(nn.Module):
-    def __init__(self, original_model, num_classes):
-        super(BaseModel, self).__init__()
-        self.num_classes = num_classes
-        self.original_model = original_model
-        self.branches = nn.ModuleList([Branch(768, 128, 64, 0.1, 2) for _ in range(num_classes)])
-        self.activation = nn.Softmax(dim=1)
-
-    def forward(self, input_ids, attention_mask=None, token_type_ids=None, labels=None):
-        out_bert = self.original_model(input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
-        pooler_out = out_bert.pooler_output
-        output_branches = [branch(pooler_out) for branch in self.branches]
-        outputs = [self.activation(out_branch) for out_branch in output_branches]
-
-        # apply softmax function for each branch
-        out_soft = [self.activation(out) for out in outputs]
-        out_soft_max_indices = [torch.argmax(out, dim=1) for out in out_soft]
-        out_soft_max_indices = torch.stack(out_soft_max_indices, dim=1)
-
-        return out_soft, out_soft_max_indices
-
-"""### Preprocess data"""
-class OpcodeData(Dataset):
-    def __init__(self, X, y, tokenizer, max_len):
-        self.tokenizer = tokenizer
-        self.X = X
-        self.targets = y
-        self.max_len = max_len
-
-    def __len__(self):
-        return len(self.X)
-
-    def __getitem__(self, index):
-        text = str(self.X[index])
-
-        inputs = self.tokenizer(
-            text,
-            None,
-            truncation=True,
-            padding='max_length',
-            add_special_tokens=True,
-            max_length=self.max_len,
-            return_token_type_ids=True
-        )
-        ids = inputs['input_ids']
-        mask = inputs['attention_mask']
-        token_type_ids = inputs["token_type_ids"]
-
-
-        return {
-            'index': index,
-            'ids': torch.tensor(ids, dtype=torch.long),
-            'mask': torch.tensor(mask, dtype=torch.long),
-            'token_type_ids': torch.tensor(token_type_ids, dtype=torch.long),
-            'targets': torch.tensor(self.targets[index], dtype=torch.long)
-        }
-
-def save_classification(y_test, y_pred, out_dir, labels):
-  if isinstance(y_pred, np.ndarray) == False:
-    y_pred = y_pred.toarray()
-
-  def accuracy(y_true, y_pred):
-    temp = 0
-    for i in range(y_true.shape[0]):
-        numerator = sum(np.logical_and(y_true[i], y_pred[i]))
-        denominator = sum(np.logical_or(y_true[i], y_pred[i]))
-        if denominator != 0:
-          temp += numerator / denominator
-    return temp / y_true.shape[0]
-
-  out = classification_report(y_test,y_pred, output_dict=True, target_names=labels)
-  total_support = out['samples avg']['support']
-
-  mr = accuracy_score(y_test, y_pred)
-  acc = accuracy(y_test,y_pred)
-  hm = hamming_loss(y_test, y_pred)
-
-  out['Exact Match Ratio'] = {'precision': mr, 'recall': mr, 'f1-score': mr, 'support': total_support}
-  out['Hamming Loss'] = {'precision': hm, 'recall': hm, 'f1-score': hm, 'support': total_support}
-  out['Accuracy'] = {'precision': acc, 'recall': acc, 'f1-score': acc, 'support': total_support}
-  out_df = pd.DataFrame(out).transpose()
-  print(out_df)
-
-  out_df.to_csv(out_dir)
-
-  return out_df
-
-"""### Create model and fine-tuning"""
-def calculate_score(y_true, preds):
-    acc_score = accuracy_score(y_true, preds)
-
-    return acc_score
-
-def get_misclassified_data(labels, preds, indices):
-  misclassify_data = {}
-  for i in range(len(labels)):
-    is_append = False
-    reject_label = np.array(labels[i])
-    for j in range(len(labels[i])):
-      if labels[i, j] != preds[i, j]:
-        reject_label[j] = 2 # reject label
-        is_append = True
-
-    if is_append:
-      x_train_index = indices[i]
-      misclassify_data[x_train_index] = np.array(reject_label)
-  return misclassify_data
 
 def train_steps(training_loader, model, loss_f, optimizer):
     print('Training...')

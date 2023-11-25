@@ -3,11 +3,11 @@ import os
 import numpy as np
 
 from sklearn.model_selection import train_test_split
-from base_multilabel import MultilabelModel
-from utils.save_report import save_classification
-from utils.feature_extraction_utils import Word2Vec
+from dscv.models.ml_models import MultilabelModel
+from dscv.utils.save_report import save_classification
+from dscv.utils.feature_extraction_utils import Word2Vec
 from sklearn.preprocessing import MinMaxScaler
-from utils.process_text import Tokenizer, pad_sequences
+from dscv.utils.process_text import Tokenizer, pad_sequences
 
 
 """

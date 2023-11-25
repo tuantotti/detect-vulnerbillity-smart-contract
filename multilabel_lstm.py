@@ -33,7 +33,6 @@ class LSTMMultilabel(nn.Module):
 
     self.use_embedding = use_embedding
     self.weight = weight
-    print(dropout)
 
     if self.use_embedding:
       self.word_embeddings = nn.Embedding.from_pretrained(self.weight)

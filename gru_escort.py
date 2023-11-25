@@ -1,22 +1,20 @@
 import pandas as pd
 import os
-import collections
 import numpy as np
-import zipfile
 import matplotlib.pyplot as plt
 import time
 
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 
 from sklearn.metrics import *
-from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer
-from utils.feature_extraction_utils import BagOfWord
-from utils.process_text import Tokenizer, pad_sequences
+from dscv.utils.feature_extraction_utils import BagOfWord, TfIdf
+from dscv.utils.process_text import Tokenizer
+from dscv.datasets import AuxiliaryOpcodeData
+from dscv.models.models import Escort
+from dscv.utils.save_report import save_classification
 
-import pickle
 
 if torch.cuda.is_available():
  dev = "cuda:0"
@@ -25,146 +23,6 @@ else:
 device = torch.device(dev)
 device
 
-def save_classification(y_test, y_pred, out_dir, labels):
-  if isinstance(y_pred, np.ndarray) == False:
-    y_pred = y_pred.toarray()
-
-  def accuracy(y_true, y_pred):
-    temp = 0
-    for i in range(y_true.shape[0]):
-        numerator = sum(np.logical_and(y_true[i], y_pred[i]))
-        denominator = sum(np.logical_or(y_true[i], y_pred[i]))
-        if denominator != 0:
-          temp += numerator / denominator
-    return temp / y_true.shape[0]
-
-  out = classification_report(y_test,y_pred, output_dict=True, target_names=labels)
-  total_support = out['samples avg']['support']
-
-  mr = accuracy_score(y_test, y_pred)
-  acc = accuracy(y_test,y_pred)
-  hm = hamming_loss(y_test, y_pred)
-
-  out['Exact Match Ratio'] = {'precision': mr, 'recall': mr, 'f1-score': mr, 'support': total_support}
-  out['Hamming Loss'] = {'precision': hm, 'recall': hm, 'f1-score': hm, 'support': total_support}
-  out['Accuracy'] = {'precision': acc, 'recall': acc, 'f1-score': acc, 'support': total_support}
-  out_df = pd.DataFrame(out).transpose()
-  print(out_df)
-
-  out_df.to_csv(out_dir)
-
-  return out_df
-
-"""# Extract and Read Data"""
-
-data_folder = os.getcwd()+'/data-multilabel/'
-
-class OpcodeData(Dataset):
-    def __init__(self, X, y, tokenizer, max_len, tfidf_vectorizer):
-        self.tokenizer = tokenizer
-        self.X = X
-        self.targets = y
-        self.max_len = max_len
-        self.tfidf_vectorizer = tfidf_vectorizer
-
-    def __len__(self):
-        return len(self.X)
-
-    def __getitem__(self, index):
-        text = str(self.X[index])
-
-        tfidf = self.tfidf_vectorizer.transform([text])
-        sequence = tokenizer.texts_to_sequences(texts=[text])
-        ids = pad_sequences(sequence, maxlen=input_size)
-
-
-        return {
-            'ids': torch.tensor(ids.flatten(), dtype=torch.long),
-            'targets': torch.tensor(self.targets[index], dtype=torch.float),
-            'tfidf': torch.tensor(tfidf.flatten(), dtype=torch.float),
-        }
-
-"""# Feature extraction"""
-
-# TF-IDF
-class TfIdf:
-  def __init__(self, save_model_dir):
-    self.save_model_dir = save_model_dir
-    try:
-      self.tfidf_vectorizer = self.load_model(self.save_model_dir)
-      print(f"Load model from {self.save_model_dir}")
-    except:
-      self.tfidf_vectorizer = TfidfVectorizer()
-      print(f"Create new model for training")
-
-  def train_ifidf(self, X_train):
-    self.tfidf_vectorizer.fit_transform(raw_documents=X_train)
-    self.save_model(self.tfidf_vectorizer)
-
-  def transform(self, raw_documents):
-    return self.tfidf_vectorizer.transform(raw_documents=raw_documents).toarray()
-
-  def save_model(self, tfidf_vectorizer):
-    try:
-      with open(self.save_model_dir, 'wb') as file:
-        pickle.dump(tfidf.tfidf_vectorizer, file)
-      print(f'save successfully TfidfVectorizer with {self.save_model_dir}')
-
-    except:
-      print(f'can\'t save TfidfVectorizer with {self.save_model_dir}')
-
-  def load_model(self, save_model_dir):
-    with open(save_model_dir, 'rb') as file:
-      tfidf_vectorizer = pickle.load(file)
-
-    return tfidf_vectorizer
-
-"""# GRU + TFIDF + ESCORT"""
-
-class Branch(nn.Module):
-  def __init__(self, input_size, hidden1_size, hidden2_size, dropout, num_outputs):
-    super(Branch, self).__init__()
-
-    self.dense1 = nn.Linear(input_size, hidden1_size)
-    self.dropout = nn.Dropout(p=dropout)
-    self.dense2 = nn.Linear(hidden1_size, hidden2_size)
-    self.dense3 = nn.Linear(hidden2_size, num_outputs)
-
-  def forward(self, x):
-    out_dense1 = self.dense1(x)
-    out_dropout = self.dropout(out_dense1)
-    out_dense2 = self.dense2(out_dropout)
-    out_dense3 = self.dense3(out_dense2)
-
-    return out_dense3
-
-"""## ESCORT"""
-
-class Escort(nn.Module):
-  def __init__(self, vocab_size, embedd_size, gru_hidden_size, n_layers, num_classes):
-    super(Escort, self).__init__()
-    self.word_embeddings = nn.Embedding(vocab_size, embedd_size)
-    self.gru = nn.GRU(embedd_size, gru_hidden_size, num_layers=n_layers)
-    self.branches = nn.ModuleList([Branch(gru_hidden_size, 128, 64, 0.2, 1) for _ in range(num_classes)])
-    self.sigmoid = nn.Sigmoid()
-
-  def forward(self, sequence, tfidf_inputs):
-    embeds = self.word_embeddings(sequence)
-    gru_out, _ = self.gru(embeds)
-    last_hidden_state = gru_out[:, -1, :]
-    pooler_input = last_hidden_state + tfidf_inputs
-    output_branches = [branch(pooler_input) for branch in self.branches]
-    output_branches = torch.cat(output_branches, dim=1)
-    outputs = self.sigmoid(output_branches)
-    return outputs
-
-"""## Train model"""
-"""### Train and Validation Steps"""
-
-def calculate_score(y_true, preds):
-    acc_score = accuracy_score(y_true, preds)
-
-    return acc_score
 
 def train_steps(training_loader, model, loss_f, optimizer):
     training_loss = 0
@@ -321,6 +179,7 @@ NUM_LAYERS = 1
 DROPOUT = 0.2
 input_size = 4100
 batch_size = 128
+data_folder = os.getcwd()+'/data-multilabel/'
 
 X_train = pd.read_csv(data_folder+'X_train.csv')['BYTECODE'].sample(frac=0.1).to_numpy()
 X_test = pd.read_csv(data_folder+'X_test.csv')['BYTECODE'].sample(frac=0.1).to_numpy()
@@ -347,9 +206,9 @@ SIZE_OF_VOCAB = len(tokenizer.word_index.keys())
 # train_dataset = OpcodeData(X_train, y_train, tokenizer, input_size, tfidf)
 # val_dataset = OpcodeData(X_val, y_val, tokenizer, input_size, tfidf)
 # test_dataset = OpcodeData(X_test, y_test, tokenizer, input_size, tfidf)
-train_dataset = OpcodeData(X_train, y_train, tokenizer, input_size, bow)
-val_dataset = OpcodeData(X_val, y_val, tokenizer, input_size, bow)
-test_dataset = OpcodeData(X_test, y_test, tokenizer, input_size, bow)
+train_dataset = AuxiliaryOpcodeData(X_train, y_train, tokenizer, input_size, bow)
+val_dataset = AuxiliaryOpcodeData(X_val, y_val, tokenizer, input_size, bow)
+test_dataset = AuxiliaryOpcodeData(X_test, y_test, tokenizer, input_size, bow)
 
 data_train_loader = DataLoader(train_dataset, batch_size=batch_size)
 data_val_loader = DataLoader(val_dataset, batch_size=batch_size)

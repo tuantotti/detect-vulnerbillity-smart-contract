@@ -3,9 +3,9 @@ import os
 import numpy as np
 
 from sklearn.model_selection import train_test_split
-from base_multilabel import MultilabelModel
-from utils.feature_extraction_utils import TfIdf
-from utils.save_report import save_classification
+from dscv.models.ml_models import MultilabelModel
+from dscv.utils.feature_extraction_utils import TfIdf
+from dscv.utils.save_report import save_classification
 
 """
 Read and preprocess data

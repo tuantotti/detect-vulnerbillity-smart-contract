@@ -3,9 +3,9 @@ import os
 import numpy as np
 
 from sklearn.model_selection import train_test_split
-from base_multilabel import MultilabelModel
-from utils.feature_extraction_utils import BagOfWord
-from utils.save_report import save_classification
+from dscv.models.ml_models import MultilabelModel
+from dscv.utils.feature_extraction_utils import BagOfWord
+from dscv.utils.save_report import save_classification
 """
 Read and preprocess data
 """
@@ -13,9 +13,6 @@ print("Read and preprocess data")
 data_folder = os.getcwd() + '/data-multilabel/'
 data = pd.read_csv(data_folder + '/Data_Cleansing.csv')
 data = data.drop(['Unnamed: 0', 'index', 'ADDRESS', 'LABEL_FORMAT'], axis=1)
-# remove_label = data['LABEL'].value_counts().keys().tolist()[6:]
-# remove_index = data[data['LABEL'].isin(remove_label)].index
-# data.drop(remove_index, inplace=True)
 num_classes = 4
 selected_columns = ['BYTECODE', 'Timestamp dependence', 'Outdated Solidity version', 'Frozen Ether', 'Delegatecall Injection']
 data = data.loc[:, selected_columns]

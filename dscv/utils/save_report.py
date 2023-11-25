@@ -2,10 +2,9 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import *
 import os
+import matplotlib.pyplot as plt
 
 def save_classification(y_test, y_pred, out_dir, labels):
-  if os.path.isdir('./report') == False:
-    os.mkdir('./report')
   if isinstance(y_pred, np.ndarray) == False:
     y_pred = y_pred.toarray()
   
@@ -34,3 +33,16 @@ def save_classification(y_test, y_pred, out_dir, labels):
   out_df.to_csv(out_dir)
 
   return out_df
+
+def plot_graph(epochs, train, valid, tittle):
+    fig = plt.figure(figsize=(12,12))
+    plt.title(tittle)
+    plt.plot(list(np.arange(epochs) + 1) , train, label='train')
+    plt.plot(list(np.arange(epochs) + 1), valid, label='validation')
+    plt.xlabel('num_epochs', fontsize=12)
+    plt.ylabel('loss', fontsize=12)
+    plt.legend(loc='best')
+    
+def calculate_score(y_true, preds):
+    acc_score = accuracy_score(y_true, preds)
+    return acc_score
