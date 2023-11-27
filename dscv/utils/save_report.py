@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.metrics import *
 import os
 import matplotlib.pyplot as plt
+from dscv.utils.util import cal_wisdomnet_acc
 
 def save_classification(y_test, y_pred, out_dir, labels):
   if isinstance(y_pred, np.ndarray) == False:
@@ -131,7 +132,7 @@ def wisdomnet_classification_report(y_true, y_pred, labels):
     'Reject Label': 0
   }
 
-  acc = calculate_accuracy(y_true, y_pred)
+  acc = cal_wisdomnet_acc(y_true, y_pred)
   report['accuracy'] = {
     'Precision': acc,
     'Recall': acc,
