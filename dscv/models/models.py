@@ -78,3 +78,44 @@ class BaseModel(nn.Module):
         out_soft_max_indices = torch.stack(out_soft_max_indices, dim=1)
 
         return out_soft, out_soft_max_indices
+    
+class WisdomNet(nn.Module):
+  def __init__(self, trained_model):
+    super(WisdomNet, self).__init__()
+    self.numclasses = trained_model.num_classes
+    self.bert = trained_model.original_model
+
+    num_outputs = 3 # add a reject label --> num_outputs = old_outputs + 1
+    self.new_branches = nn.ModuleList([Branch(768, 128, 64, 0.1, num_outputs) if i == 1 else Branch(768, 128, 64, 0.1, 2) for i in range(self.numclasses)])
+
+    for i in range(self.numclasses):
+      old_branch = trained_model.branches[i]
+      new_branch = self.new_branches[i]
+      self.copy_weight_branch(old_branch, new_branch)
+      new_branch.dense3.weight.data[:2].copy_(old_branch.dense3.weight.data.clone())
+      new_branch.dense3.bias.data[:2].copy_(old_branch.dense3.bias.data.clone())
+
+    self.softmax = nn.Softmax(dim=1)
+
+  def copy_weight_branch(self, old_branch, new_branch, name_except='dense3'):
+    for name, param in old_branch.named_parameters():
+      if name_except not in name:
+        name_layer = name.split('.')[0]
+        name_attr_layer = name.split('.')[1]
+        new_model_param = getattr(new_branch, name_layer)
+        if name_attr_layer == 'weight':
+          new_model_param.weight.data.copy_(param.data.clone())
+        if name_attr_layer == 'bias':
+          new_model_param.bias.data.copy_(param.data.clone())
+
+  def forward(self, input_ids, attention_mask=None, token_type_ids=None, labels=None):
+    out_bert = self.bert(input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
+    pooler_out = out_bert.pooler_output
+    output_branches = [branch(pooler_out) for branch in self.new_branches]
+
+    # apply softmax function for each branch
+    out_soft = [self.softmax(out) for out in output_branches]
+    out_soft_max_indices = [torch.argmax(out, dim=1) for out in out_soft]
+    out_soft_max_indices = torch.stack(out_soft_max_indices, dim=1)
+
+    return out_soft, out_soft_max_indices    
