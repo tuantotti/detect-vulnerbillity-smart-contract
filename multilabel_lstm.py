@@ -235,7 +235,7 @@ def run(feature_extraction_method='tfidf'):
   Read and preprocess data
   """
   print("Read and preprocess data")
-  data_folder = os.getcwd() + '/data-multilabel/'
+  data_folder = os.getcwd() + '/data/'
   data = pd.read_csv(data_folder + 'Data_Cleansing.csv')
   data = data.drop(['Unnamed: 0', 'index', 'ADDRESS', 'LABEL_FORMAT'], axis=1)
   num_classes = 4

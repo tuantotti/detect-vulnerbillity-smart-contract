@@ -110,20 +110,24 @@ class EscortOpcodeData(Dataset):
         return len(self.X)
 
     def __getitem__(self, index):
+        result = {}
         text = self.X[index]
         word2vec = self.avg(text)
         ids = self.tokenizer.texts_to_sequences([text])[0]
         ids = pad_sequences([ids], maxlen=self.max_len)[0]
-        tfidf_features = self.tfidf.transform([text]).toarray()[0]
+        
+        result['index'] = index
+        result['opcode'] = text
+        result['ids'] = torch.tensor(ids, dtype=torch.long)
+        result['word2vec'] = torch.tensor(word2vec, dtype=torch.float)
+        result['targets'] = torch.tensor(self.targets[index], dtype=torch.float)
+        
+        tfidf_features = []
+        if self.tfidf is not None:
+            tfidf_features = self.tfidf.transform([text]).toarray()[0]
+            result['tfidf_features'] = torch.tensor(tfidf_features, dtype=torch.float)
 
-        return {
-            'index': index,
-            'opcode': text,
-            'ids': torch.tensor(ids, dtype=torch.long),
-            'tfidf_features': torch.tensor(tfidf_features, dtype=torch.float),
-            'word2vec': torch.tensor(word2vec, dtype=torch.float),
-            'targets': torch.tensor(self.targets[index], dtype=torch.float)
-        }
+        return result
         
 class OpcodeData(Dataset):
     def __init__(self, X, y, tokenizer, max_len):

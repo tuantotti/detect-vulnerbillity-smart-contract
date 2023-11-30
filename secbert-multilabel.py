@@ -214,7 +214,7 @@ def run(k=1):
     """Custom activation"""
     secBertClassifierMultilabel = CustomClassifier(secBertClassifier)
     """### Read data"""
-    data_folder = os.getcwd() + '/data-multilabel/'
+    data_folder = os.getcwd() + '/data/'
     data = pd.read_csv(data_folder + '/Data_Cleansing.csv')
     selected_columns = ['BYTECODE', 'Timestamp dependence', 'Outdated Solidity version', 'Frozen Ether', 'Delegatecall Injection']
     data = data.loc[:, selected_columns]

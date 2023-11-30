@@ -11,15 +11,18 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.ensemble import RandomForestClassifier
 
 print("Read data")
-X_train = pd.read_csv('./data/X_train.csv')
-X_test = pd.read_csv('./data/X_test.csv')
-X_valid = pd.read_csv('./data/X_val.csv')
-y_train = pd.read_csv('./data/y_train.csv')
-y_test = pd.read_csv('./data/y_test.csv')
-y_valid = pd.read_csv('./data/y_val.csv')
+data_folder = os.getcwd()+'/data/'
+out_folder = os.getcwd()+'/report/'
+X_train = pd.read_csv(data_folder+'X_train.csv')['BYTECODE']
+X_test = pd.read_csv(data_folder+'X_test.csv')['BYTECODE']
+X_val = pd.read_csv(data_folder+'X_val.csv')['BYTECODE']
 
-X_train = pd.concat([X_train, X_valid])
-y_train = pd.concat([y_train, y_valid])
+y_train = pd.read_csv(data_folder+'y_train.csv')
+y_test = pd.read_csv(data_folder+'y_test.csv')
+y_val = pd.read_csv(data_folder+'y_val.csv')
+
+X_train = pd.concat([X_train, X_val])
+y_train = pd.concat([y_train, y_val])
 labels = y_train.columns.to_list()
 
 print(X_train.shape)
@@ -46,7 +49,7 @@ X_tokenized_test = pad_sequences(sequences_test, maxlen=max_length)
 print(X_tokenized_train.shape)
 word_index = tokenizer.word_index
 vocab_size = len(word_index) + 1
-word2vec = Word2Vec(word_index)
+word2vec = Word2Vec.load_model(os.getcwd()+'/saved_model/w')
 # print('Train embedding')
 # word2vec.train_vocab(X=X_train, embedding_dim=32)
 embedding_matrix = word2vec()
@@ -79,5 +82,5 @@ adapt_al = MultilabelModel(X_train=X_train, y_train=y_train.to_numpy(), X_test=X
                                method='MLkNN', num_classes=num_classes)
 
 y_pred_adapt = adapt_al()
-save_classification(y_test=y_test.to_numpy(), y_pred=y_pred_adapt, out_dir='./report/Adapted_Algorithm_W2V_TFIDF.csv', labels=labels)
+save_classification(y_test=y_test.to_numpy(), y_pred=y_pred_adapt, out_dir=out_folder+'Adapted_Algorithm_W2V_TFIDF.csv', labels=labels)
 

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import os
 import torch.nn as nn
 from dscv.utils.util import calculate_score
 from dscv.utils.util import get_misclassified_data_v2
@@ -173,8 +174,9 @@ def predict(testing_loader, model):
     return total_labels, total_preds
 
 if __name__ == "__main__":
-    data_folder='/kaggle/input/'
-    out_folder ='/kaggle/working/'
+    data_folder= os.getcwd()+'/data/'
+    out_folder ='/saved_model/'
+    report_folder = os.getcwd()+'/report/'
     # Define constant
     input_size = 4100
     epochs = 20
@@ -200,7 +202,7 @@ if __name__ == "__main__":
                                 # and AUXILIARY_FEATURE_LENGTH = 256, NUM_AUXILIARY = 2 (w2v and tfidf)
                                 # so the auxiliary vector is (32, 256+256*2) = (32, 768)
     save_model_dir = out_folder + 'escort-tfidf-w2v.pt'
-    report_dir = out_folder + 'escort-tfidf-w2v.csv'
+    report_dir = report_folder + 'escort-tfidf-w2v.csv'
     tokenizer_dir = out_folder + 'tokenizer.pickle'
     w2v_dir = out_folder + 'fasttext_w2v.pickle'
     tfidf_dir = out_folder + 'tfidf.pickle'

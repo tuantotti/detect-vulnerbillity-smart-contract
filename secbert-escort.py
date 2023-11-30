@@ -182,7 +182,7 @@ def plot_graph(epochs, train, valid, tittle):
 
 def run(k=6):
   # Defining some key variables that will be used later on in the training
-  data_folder = os.getcwd() + '/data-multilabel/'
+  data_folder = os.getcwd() + '/data/'
   labels = ['Timestamp dependence', 'Outdated Solidity version', 'Frozen Ether', 'Delegatecall Injection']
   max_length = 5500
   TRAIN_BATCH_SIZE = 32

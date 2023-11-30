@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import *
 from dscv.utils.feature_extraction_utils import BagOfWord, TfIdf
 from dscv.utils.process_text import Tokenizer
-from dscv.datasets import AuxiliaryOpcodeData
+from dscv.datasets import EscortOpcodeData
 from dscv.models.models import Escort
 from dscv.utils.save_report import save_classification
 
@@ -179,36 +179,26 @@ NUM_LAYERS = 1
 DROPOUT = 0.2
 input_size = 4100
 batch_size = 128
-data_folder = os.getcwd()+'/data-multilabel/'
+GRU_HIDDEN_SIZE = 256
+data_folder = os.getcwd()+'/data/'
 
-X_train = pd.read_csv(data_folder+'X_train.csv')['BYTECODE'].sample(frac=0.1).to_numpy()
-X_test = pd.read_csv(data_folder+'X_test.csv')['BYTECODE'].sample(frac=0.1).to_numpy()
-X_val = pd.read_csv(data_folder+'X_val.csv')['BYTECODE'].sample(frac=0.1).to_numpy()
+X_train = pd.read_csv(data_folder+'X_train.csv')['BYTECODE'].to_numpy()
+X_test = pd.read_csv(data_folder+'X_test.csv')['BYTECODE'].to_numpy()
+X_val = pd.read_csv(data_folder+'X_val.csv')['BYTECODE'].to_numpy()
 
-y_train = pd.read_csv(data_folder+'y_train.csv').sample(frac=0.1).to_numpy()
-y_test = pd.read_csv(data_folder+'y_test.csv').sample(frac=0.1).to_numpy()
-y_val = pd.read_csv(data_folder+'y_val.csv').sample(frac=0.1).to_numpy()
+y_train = pd.read_csv(data_folder+'y_train.csv').to_numpy()
+y_test = pd.read_csv(data_folder+'y_test.csv').to_numpy()
+y_val = pd.read_csv(data_folder+'y_val.csv').to_numpy()
 
-# save_idf_dir_file = os.path.join(os.getcwd() + '/trained/tfidf/', 'tfidf_vectorizer.pkl')
-# tfidf = TfIdf(save_model_dir=save_idf_dir_file)
-# tfidf.train_ifidf(X_train=X_train)
-
-print("Feature Extraction - Bag Of Word")
-bow = BagOfWord(X_train=X_train, X_test=X_test)
-X_train_bow, X_test_bow = bow()
-
-GRU_HIDDEN_SIZE = len(bow.vectorizer.vocabulary_)
 
 tokenizer = Tokenizer()
 tokenizer.fit_on_texts(texts=X_train)
 SIZE_OF_VOCAB = len(tokenizer.word_index.keys())
 
-# train_dataset = OpcodeData(X_train, y_train, tokenizer, input_size, tfidf)
-# val_dataset = OpcodeData(X_val, y_val, tokenizer, input_size, tfidf)
-# test_dataset = OpcodeData(X_test, y_test, tokenizer, input_size, tfidf)
-train_dataset = AuxiliaryOpcodeData(X_train, y_train, tokenizer, input_size, bow)
-val_dataset = AuxiliaryOpcodeData(X_val, y_val, tokenizer, input_size, bow)
-test_dataset = AuxiliaryOpcodeData(X_test, y_test, tokenizer, input_size, bow)
+
+train_dataset = EscortOpcodeData(X_train, y_train, tokenizer, input_size)
+val_dataset = EscortOpcodeData(X_val, y_val, tokenizer, input_size)
+test_dataset = EscortOpcodeData(X_test, y_test, tokenizer, input_size)
 
 data_train_loader = DataLoader(train_dataset, batch_size=batch_size)
 data_val_loader = DataLoader(val_dataset, batch_size=batch_size)

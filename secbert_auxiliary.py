@@ -183,7 +183,7 @@ if __name__ == '__main__':
     LEARNING_RATE = 1e-04
     num_class = 4
     labels = ['Timestamp dependence', 'Outdated Solidity version', 'Frozen Ether', 'Delegatecall Injection']
-    data_folder = os.getcwd()+'/Untitled Folder/'
+    data_folder = os.getcwd()+'/data/'
 
     X_train = pd.read_csv(data_folder+'X_train.csv')
     X_test = pd.read_csv(data_folder+'X_test.csv')
