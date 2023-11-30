@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 
 class Tokenizer(object):
     def __init__(self, num_words=None, lower=True) -> None:
@@ -44,6 +45,22 @@ class Tokenizer(object):
                 i = self.word_index.get(w)
                 vect.append(i)
             yield vect
+            
+    def save_model(self, save_model_dir):
+        try:
+            with open(save_model_dir, 'wb') as file:
+                pickle.dump(self, file)
+            print(f'save successfully model with {save_model_dir}')
+
+        except:
+            print(f'can\'t save model with {save_model_dir}')
+
+    @staticmethod
+    def load_model(save_model_dir):
+        with open(save_model_dir, 'rb') as file:
+            model = pickle.load(file)
+
+        return model
 
 def pad_sequences(
     sequences,

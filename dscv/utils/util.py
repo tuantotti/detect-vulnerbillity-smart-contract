@@ -18,6 +18,25 @@ def get_misclassified_data(labels, preds, indices):
   return misclassify_data
 
 
+def get_misclassified_data_v2(labels, preds, opcodes):
+  misclassify_data = []
+  for i in range(len(labels)):
+    is_append = False
+    reject_label = np.array(labels[i])
+    for j in range(len(labels[i])):
+      if labels[i, j] != preds[i, j]:
+        reject_label[j] = 2 # reject label
+        is_append = True
+
+    if is_append:
+      misclassify_data.append({
+          'opcode': opcodes[i],
+          'reject_label': np.array(reject_label),
+          'label': np.array(labels[i]),
+      })
+  return misclassify_data
+
+
 def freeze_k_layer(secBert, k=1):
   for param in secBert.encoder.layer[0:k].parameters():
     param.requires_grad = False

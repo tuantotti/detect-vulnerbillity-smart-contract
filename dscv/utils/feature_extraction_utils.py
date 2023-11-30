@@ -2,6 +2,7 @@ import numpy as np
 from gensim.models import FastText
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 import pickle
+from typing import List
 
 # TF-IDF
 class TfIdf:
@@ -71,6 +72,22 @@ class Word2Vec:
         sentences = [sentence.split() for sentence in X]
         model = FastText(vector_size=embedding_dim, window=6, min_count=1, sentences=sentences, epochs=20)
         model.save(self.save_model_dir)
+        
+    def save_model(self, save_model_dir):
+        try:
+            with open(save_model_dir, 'wb') as file:
+                pickle.dump(self, file)
+            print(f'save successfully model with {save_model_dir}')
+
+        except:
+            print(f'can\'t save model with {save_model_dir}')
+
+    @staticmethod
+    def load_model(save_model_dir):
+        with open(save_model_dir, 'rb') as file:
+            model = pickle.load(file)
+
+        return model
 
 
 class BagOfWord:

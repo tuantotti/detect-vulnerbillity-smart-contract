@@ -11,12 +11,12 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.ensemble import RandomForestClassifier
 
 print("Read data")
-X_train = pd.read_csv('./data-multilabel/X_train.csv')
-X_test = pd.read_csv('./data-multilabel/X_test.csv')
-X_valid = pd.read_csv('./data-multilabel/X_val.csv')
-y_train = pd.read_csv('./data-multilabel/y_train.csv')
-y_test = pd.read_csv('./data-multilabel/y_test.csv')
-y_valid = pd.read_csv('./data-multilabel/y_val.csv')
+X_train = pd.read_csv('./data/X_train.csv')
+X_test = pd.read_csv('./data/X_test.csv')
+X_valid = pd.read_csv('./data/X_val.csv')
+y_train = pd.read_csv('./data/y_train.csv')
+y_test = pd.read_csv('./data/y_test.csv')
+y_valid = pd.read_csv('./data/y_val.csv')
 
 X_train = pd.concat([X_train, X_valid])
 y_train = pd.concat([y_train, y_valid])

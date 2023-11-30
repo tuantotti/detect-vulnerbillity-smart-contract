@@ -91,6 +91,40 @@ class FullAuxiliaryOpcode(Dataset):
             'targets': torch.tensor(self.targets[index], dtype=torch.long)
         }
         
+class EscortOpcodeData(Dataset):
+    def __init__(self, X, y, tokenizer, tfidf, w2v_model, max_len):
+        self.tokenizer = tokenizer
+        self.X = X.to_numpy()
+        self.targets = y
+        self.max_len = max_len
+        self.tfidf = tfidf
+        self.model = w2v_model
+        
+    def avg(self,text):
+        for x in text:
+            k = x.split()
+        word_vectors = [self.model.wv[word] for word in k]
+        return np.mean(word_vectors, axis=0)
+    
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, index):
+        text = self.X[index]
+        word2vec = self.avg(text)
+        ids = self.tokenizer.texts_to_sequences([text])[0]
+        ids = pad_sequences([ids], maxlen=self.max_len)[0]
+        tfidf_features = self.tfidf.transform([text]).toarray()[0]
+
+        return {
+            'index': index,
+            'opcode': text,
+            'ids': torch.tensor(ids, dtype=torch.long),
+            'tfidf_features': torch.tensor(tfidf_features, dtype=torch.float),
+            'word2vec': torch.tensor(word2vec, dtype=torch.float),
+            'targets': torch.tensor(self.targets[index], dtype=torch.float)
+        }
+        
 class OpcodeData(Dataset):
     def __init__(self, X, y, tokenizer, max_len):
         self.tokenizer = tokenizer
