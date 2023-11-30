@@ -7,10 +7,10 @@ import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.metrics import f1_score, accuracy_score
-from utils.feature_extraction_utils import TfIdf, BagOfWord, Word2Vec
+from dscv.utils.feature_extraction_utils import TfIdf, BagOfWord, Word2Vec
 from sklearn.model_selection import train_test_split
-from utils.save_report import save_classification
-from utils.process_text import Tokenizer, pad_sequences
+from dscv.utils.save_report import save_classification
+from dscv.utils.process_text import Tokenizer, pad_sequences
 
 import matplotlib.pyplot as plt
 
